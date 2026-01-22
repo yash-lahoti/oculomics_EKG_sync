@@ -1,0 +1,27 @@
+# Core Deep Learning
+torch>=2.0.0
+torchvision>=0.15.0
+timm>=0.9.0
+
+# Data Manipulation
+numpy>=1.24.0
+pandas>=2.0.0
+scikit-learn>=1.3.0
+
+# Image Processing & Augmentation
+opencv-python-headless>=4.8.0
+albumentations>=1.3.0
+
+# Explainability
+grad-cam>=1.4.8
+pytorch-grad-cam>=1.4.8
+
+# Logging & Visualization
+tensorboard>=2.13.0
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Utilities
+PyYAML>=6.0
+tqdm>=4.65.0
+Pillow>=10.0.0

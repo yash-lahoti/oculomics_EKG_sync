@@ -1,0 +1,8 @@
+patient_id,image_path,grs_cad,grs_diabetes,has_hypertension,has_glaucoma
+P001,fundus_001.jpg,0.75,-0.32,1,0
+P001,fundus_002.jpg,0.75,-0.32,1,0
+P002,fundus_003.jpg,-0.15,1.24,0,1
+P002,fundus_004.jpg,-0.15,1.24,0,1
+P003,fundus_005.jpg,1.02,0.58,1,1
+P004,fundus_006.jpg,-0.89,-0.76,0,0
+P005,fundus_007.jpg,0.34,0.91,1,0
