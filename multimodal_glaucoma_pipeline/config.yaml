@@ -1,0 +1,161 @@
+# Multimodal Glaucoma AI Pipeline Configuration
+# Unified config for OCTA VD, Fundus C/D, RNFL maps, and clinical parameters
+
+project:
+  name: "multimodal_glaucoma_ai"
+  output_dir: "outputs"
+  random_seed: 42
+
+# Key column names for merging across modalities
+keys:
+  patient_id: "patient_id"
+  eye: "eye"
+  visit_date: "visit_date"
+
+# Clinical/demographic data
+clinical:
+  path: "data/clinical.csv"
+  group_col: "group"
+  covariates:
+    fixed:
+      - "age"
+      - "sex"
+      - "iop"
+      - "a1c"
+    optional_fixed:
+      - "sbp"
+      - "dbp"
+      - "htn_dx"
+      - "moca"
+  outcomes:
+    primary_group: "group"
+    glaucoma_label_value: "Glaucoma"
+    control_label_value: "Control"
+  glaucoma_only_cols:
+    - "vf_md"
+    - "diagnosis_subtype"
+
+# Modality-specific configurations
+modalities:
+  # OCTA Vessel Density
+  - name: "octa_vd"
+    path: "data/octa_vd.csv"
+    format: "wide"
+    id_cols: ["patient_id", "eye", "visit_date", "slab", "region"]
+    value_cols_regex: "^VD_"
+    long_feature_col: "feature"
+    long_value_col: "value"
+    feature_namespace: "OCTA"
+    qc:
+      min_valid_fraction_per_patient_eye: 0.7
+    aggregation:
+      level: "patient_eye_visit"
+      method: "mean"
+    analysis:
+      lmm:
+        enabled: true
+        random_effects: ["patient_id"]
+        add_eye_as_fixed: true
+        formula: "value ~ group + age + sex + iop + a1c"
+      auroc:
+        enabled: true
+        method: "logreg"
+      multiple_testing:
+        method: "fdr_bh"
+
+  # Fundus Cup-to-Disc
+  - name: "fundus_cd"
+    path: "data/fundus_cd.csv"
+    format: "wide"
+    id_cols: ["patient_id", "eye", "visit_date", "device", "quality_grade"]
+    value_cols:
+      - "pred_vcdr"
+      - "pred_area_cdr"
+      - "rim_area"
+      - "disc_area"
+      - "cup_area"
+    feature_namespace: "FUNDUS"
+    qc:
+      quality_min: 2
+      allowed_devices: []  # empty = allow all
+    analysis:
+      lmm:
+        enabled: true
+        random_effects: ["patient_id"]
+        add_eye_as_fixed: true
+        formula: "value ~ group + age + sex + iop + a1c + C(device) + quality_grade"
+      reliability:
+        enabled: true
+        metric: "value"
+        icc:
+          by: ["patient_id", "eye"]
+          rater: "device"
+      auroc:
+        enabled: true
+      multiple_testing:
+        method: "fdr_bh"
+
+  # RNFL Thickness
+  - name: "rnfl"
+    path: "data/rnfl_map.csv"
+    format: "wide"
+    id_cols: ["patient_id", "eye", "visit_date"]
+    value_cols_regex: "^rnfl_"
+    feature_namespace: "RNFL"
+    qc:
+      plausible_range_um: [30, 200]
+    aggregation:
+      level: "patient_eye_visit"
+      method: "mean"
+    analysis:
+      lmm:
+        enabled: true
+        random_effects: ["patient_id"]
+        add_eye_as_fixed: true
+        formula: "value ~ group + age + sex + iop + a1c"
+      auroc:
+        enabled: true
+      multiple_testing:
+        method: "fdr_bh"
+
+# Table generation settings
+tables:
+  table1_demographics:
+    enabled: true
+    continuous: ["age", "iop", "a1c", "sbp", "dbp"]
+    categorical: ["sex", "htn_dx", "diagnosis_subtype"]
+  master_tables:
+    enabled: true
+    groupby:
+      - "modality"
+      - "category"
+    sort_by:
+      - "modality"
+      - "category"
+      - "p_fdr"
+
+# Feature categorization rules (regex-based)
+feature_categories:
+  rules:
+    - match: "^OCTA:VD_"
+      category: "Vessel Density"
+    - match: "^FUNDUS:pred_"
+      category: "Cup-to-Disc"
+    - match: "^FUNDUS:rim_"
+      category: "Rim Metrics"
+    - match: "^FUNDUS:disc_"
+      category: "Disc Metrics"
+    - match: "^FUNDUS:cup_"
+      category: "Cup Metrics"
+    - match: "^RNFL:rnfl_clock_"
+      category: "Clock Hour"
+    - match: "^RNFL:rnfl_global"
+      category: "Global Thickness"
+    - match: "^RNFL:rnfl_(sup|inf|temp|nasal)"
+      category: "Quadrant Thickness"
+    - match: "^RNFL:rnfl_"
+      category: "Thickness Summary"
+
+# Export settings
+export:
+  formats: ["csv", "parquet"]
