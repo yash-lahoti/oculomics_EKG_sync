@@ -1,5 +1,5 @@
 # Multimodal Glaucoma AI Pipeline Configuration
-# Unified config for OCTA VD, Fundus C/D, RNFL maps, and clinical parameters
+# Unified config for OCTA VD, Fundus C/D, RNFL maps, visual function, and clinical parameters
 
 project:
   name: "multimodal_glaucoma_ai"
@@ -27,6 +27,16 @@ clinical:
       - "dbp"
       - "htn_dx"
       - "moca"
+  # Visual function outcomes - can be used as both covariates and outcomes
+  visual_function:
+    mesopic:
+      - "va_logmar_mesopic"
+    photopic:
+      - "va_logmar_photopic"
+    letter_score:
+      - "va_letter_score"
+    contrast_sensitivity:
+      - "contrast_sensitivity_log"
   outcomes:
     primary_group: "group"
     glaucoma_label_value: "Glaucoma"
@@ -118,11 +128,108 @@ modalities:
       multiple_testing:
         method: "fdr_bh"
 
+# Outcome-based LMM models
+# These models examine relationships between imaging features and visual function outcomes
+outcome_models:
+  enabled: true
+  models:
+    # Model 1: Effect of VD on mesopic visual acuity, stratified by glaucoma
+    - name: "vd_mesopic_va"
+      description: "OCTA Vessel Density effect on Mesopic Visual Acuity"
+      outcome: "va_logmar_mesopic"
+      predictor_modality: "octa_vd"
+      predictor_features: ["VD_Global", "VD_ETDRS_Central", "VD_ETDRS_Superior", "VD_ETDRS_Inferior"]
+      formula: "va_logmar_mesopic ~ predictor + group + predictor:group + age + sex + iop"
+      random_effects: ["patient_id"]
+      stratify_by_group: true
+
+    # Model 2: Effect of VD on photopic visual acuity
+    - name: "vd_photopic_va"
+      description: "OCTA Vessel Density effect on Photopic Visual Acuity"
+      outcome: "va_logmar_photopic"
+      predictor_modality: "octa_vd"
+      predictor_features: ["VD_Global", "VD_ETDRS_Central"]
+      formula: "va_logmar_photopic ~ predictor + group + predictor:group + age + sex + iop"
+      random_effects: ["patient_id"]
+      stratify_by_group: true
+
+    # Model 3: Effect of VD on contrast sensitivity
+    - name: "vd_contrast_sensitivity"
+      description: "OCTA Vessel Density effect on Contrast Sensitivity"
+      outcome: "contrast_sensitivity_log"
+      predictor_modality: "octa_vd"
+      predictor_features: ["VD_Global", "VD_ETDRS_Central"]
+      formula: "contrast_sensitivity_log ~ predictor + group + predictor:group + age + sex + iop"
+      random_effects: ["patient_id"]
+      stratify_by_group: true
+
+    # Model 4: Effect of RNFL on mesopic VA
+    - name: "rnfl_mesopic_va"
+      description: "RNFL Thickness effect on Mesopic Visual Acuity"
+      outcome: "va_logmar_mesopic"
+      predictor_modality: "rnfl"
+      predictor_features: ["rnfl_global", "rnfl_sup", "rnfl_inf"]
+      formula: "va_logmar_mesopic ~ predictor + group + predictor:group + age + sex + iop"
+      random_effects: ["patient_id"]
+      stratify_by_group: true
+
+    # Model 5: Effect of RNFL on photopic VA
+    - name: "rnfl_photopic_va"
+      description: "RNFL Thickness effect on Photopic Visual Acuity"
+      outcome: "va_logmar_photopic"
+      predictor_modality: "rnfl"
+      predictor_features: ["rnfl_global", "rnfl_sup", "rnfl_inf"]
+      formula: "va_logmar_photopic ~ predictor + group + predictor:group + age + sex + iop"
+      random_effects: ["patient_id"]
+      stratify_by_group: true
+
+    # Model 6: Effect of RNFL on contrast sensitivity
+    - name: "rnfl_contrast_sensitivity"
+      description: "RNFL Thickness effect on Contrast Sensitivity"
+      outcome: "contrast_sensitivity_log"
+      predictor_modality: "rnfl"
+      predictor_features: ["rnfl_global", "rnfl_sup", "rnfl_inf"]
+      formula: "contrast_sensitivity_log ~ predictor + group + predictor:group + age + sex + iop"
+      random_effects: ["patient_id"]
+      stratify_by_group: true
+
+    # Model 7: Effect of Fundus CDR on visual function
+    - name: "cdr_mesopic_va"
+      description: "Cup-to-Disc Ratio effect on Mesopic Visual Acuity"
+      outcome: "va_logmar_mesopic"
+      predictor_modality: "fundus_cd"
+      predictor_features: ["pred_vcdr", "rim_area"]
+      formula: "va_logmar_mesopic ~ predictor + group + predictor:group + age + sex + iop"
+      random_effects: ["patient_id"]
+      stratify_by_group: true
+
+    # Model 8: VF MD as outcome (glaucoma patients only)
+    - name: "vd_vf_md"
+      description: "OCTA Vessel Density association with Visual Field MD (Glaucoma only)"
+      outcome: "vf_md"
+      predictor_modality: "octa_vd"
+      predictor_features: ["VD_Global", "VD_ETDRS_Central", "VD_ETDRS_Superior", "VD_ETDRS_Inferior"]
+      formula: "vf_md ~ predictor + age + sex + iop"
+      random_effects: ["patient_id"]
+      glaucoma_only: true
+      stratify_by_group: false
+
+    # Model 9: RNFL predicting VF MD (glaucoma only)
+    - name: "rnfl_vf_md"
+      description: "RNFL Thickness association with Visual Field MD (Glaucoma only)"
+      outcome: "vf_md"
+      predictor_modality: "rnfl"
+      predictor_features: ["rnfl_global", "rnfl_sup", "rnfl_inf"]
+      formula: "vf_md ~ predictor + age + sex + iop"
+      random_effects: ["patient_id"]
+      glaucoma_only: true
+      stratify_by_group: false
+
 # Table generation settings
 tables:
   table1_demographics:
     enabled: true
-    continuous: ["age", "iop", "a1c", "sbp", "dbp"]
+    continuous: ["age", "iop", "a1c", "sbp", "dbp", "va_logmar_mesopic", "va_logmar_photopic", "contrast_sensitivity_log", "vf_md"]
     categorical: ["sex", "htn_dx", "diagnosis_subtype"]
   master_tables:
     enabled: true

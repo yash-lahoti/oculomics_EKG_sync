@@ -6,11 +6,20 @@ Unified analysis pipeline for:
 - OCTA Vessel Density (ETDRS sectors + global; optionally slab-level)
 - Fundus C/D (VCDR, area CDR, rim metrics, quality/device)
 - RNFL thickness maps (global/quadrants/clock-hours + optionally grid)
+- Visual function (mesopic/photopic VA, contrast sensitivity)
 - Clinical parameters (age, sex, IOP, A1c, BP, diagnosis, VF MD, etc.)
 
 Design principle: everything becomes a "long-form feature table" keyed by
 patient/eye/visit/modality/feature/value, then the same analysis recipes
 (descriptives, LMM, AUROC, reliability) run regardless of modality.
+
+Outcome Models:
+The pipeline also supports outcome-based LMM analyses examining relationships
+between imaging features and visual function:
+- Mesopic/Photopic VA ~ VD + glaucoma + covariates
+- Contrast sensitivity ~ RNFL + glaucoma + covariates
+- VF MD ~ VD/RNFL (glaucoma patients only)
+- Interaction effects (predictor x group)
 """
 
 from __future__ import annotations
@@ -235,6 +244,68 @@ def calculate_icc(
         logger.debug(f"ICC calculation failed: {e}")
 
     return None
+
+
+def run_outcome_lmm(
+    df: pd.DataFrame,
+    formula: str,
+    random_effect_col: str,
+    outcome_col: str,
+) -> Optional[dict]:
+    """
+    Run an outcome-based LMM model.
+
+    Args:
+        df: Input dataframe with predictor and outcome columns
+        formula: R-style formula with 'predictor' as placeholder
+        random_effect_col: Column for random effects grouping
+        outcome_col: Name of the outcome variable
+
+    Returns:
+        Dictionary with model results or None if fitting fails
+    """
+    try:
+        import statsmodels.formula.api as smf
+    except ImportError:
+        logger.warning("statsmodels not installed; skipping outcome LMM")
+        return None
+
+    dd = df.dropna(subset=[outcome_col, "predictor"]).copy()
+
+    if dd.empty or len(dd) < 10:
+        return None
+
+    if random_effect_col not in dd.columns or dd[random_effect_col].nunique() < 2:
+        return None
+
+    try:
+        model = smf.mixedlm(formula, dd, groups=dd[random_effect_col]).fit(reml=False)
+
+        results = {
+            "n_obs": len(dd),
+            "n_groups": dd[random_effect_col].nunique(),
+            "aic": model.aic,
+            "bic": model.bic,
+            "params": {},
+        }
+
+        # Extract all coefficients
+        for param in model.params.index:
+            results["params"][param] = {
+                "coef": float(model.params[param]),
+                "se": float(model.bse[param]) if param in model.bse.index else np.nan,
+                "pvalue": float(model.pvalues[param]) if param in model.pvalues.index else np.nan,
+            }
+            if param in model.bse.index:
+                se = float(model.bse[param])
+                results["params"][param]["ci_low"] = float(model.params[param]) - 1.96 * se
+                results["params"][param]["ci_high"] = float(model.params[param]) + 1.96 * se
+
+        return results
+
+    except Exception as e:
+        logger.debug(f"Outcome LMM fitting failed: {e}")
+        return None
 
 
 # -----------------------------------------------------------------------------
@@ -740,6 +811,254 @@ class MultiModalPipeline:
 
         return t1
 
+    def run_outcome_models(
+        self, merged: pd.DataFrame, clin: pd.DataFrame
+    ) -> pd.DataFrame:
+        """
+        Run outcome-based LMM models examining relationships between
+        imaging features and visual function outcomes.
+
+        Models can examine:
+        - VA (mesopic/photopic) ~ VD + group + covariates
+        - Contrast sensitivity ~ RNFL + group + covariates
+        - VF MD ~ VD/RNFL (glaucoma only)
+
+        Args:
+            merged: Merged feature + clinical data (long format)
+            clin: Clinical data
+
+        Returns:
+            DataFrame with outcome model results
+        """
+        cfg = self.cfg
+        outcome_cfg = cfg.get("outcome_models", {})
+
+        if not outcome_cfg.get("enabled", False):
+            logger.info("Outcome models disabled in config")
+            return pd.DataFrame()
+
+        # Get model definitions from 'models' key
+        model_defs = outcome_cfg.get("models", [])
+
+        if not model_defs:
+            logger.warning("No outcome models defined")
+            return pd.DataFrame()
+
+        group_col = cfg["clinical"]["group_col"]
+        pos = cfg["clinical"]["outcomes"]["glaucoma_label_value"]
+        ctrl = cfg["clinical"]["outcomes"]["control_label_value"]
+
+        results = []
+
+        for model_def in model_defs:
+            model_name = model_def["name"]
+            description = model_def.get("description", model_name)
+            outcome_var = model_def["outcome"]
+            predictor_modality = model_def["predictor_modality"]
+            predictor_features = model_def.get("predictor_features", [])
+            formula_template = model_def["formula"]
+            random_effects = model_def.get("random_effects", [self.k_patient])
+            glaucoma_only = model_def.get("glaucoma_only", False)
+            stratify_by_group = model_def.get("stratify_by_group", False)
+
+            logger.info(f"Running outcome model: {model_name}")
+
+            # Filter merged data for this predictor modality
+            mod_data = merged[merged["modality"] == predictor_modality].copy()
+
+            if mod_data.empty:
+                logger.warning(f"No data for modality {predictor_modality}")
+                continue
+
+            # Process each predictor feature
+            for pred_feature in predictor_features:
+                # Get data for this specific feature
+                feat_full = f"{predictor_modality.upper()}:{pred_feature}"
+                feat_data = mod_data[mod_data["feature_full"] == feat_full].copy()
+
+                if feat_data.empty:
+                    # Try without namespace
+                    feat_data = mod_data[mod_data["feature"] == pred_feature].copy()
+
+                if feat_data.empty:
+                    logger.debug(f"No data for feature {pred_feature}")
+                    continue
+
+                # Rename value to predictor for formula
+                feat_data = feat_data.rename(columns={"value": "predictor"})
+
+                # Check outcome exists
+                if outcome_var not in feat_data.columns:
+                    logger.debug(f"Outcome {outcome_var} not in data")
+                    continue
+
+                # Apply glaucoma-only filter
+                if glaucoma_only:
+                    feat_data = feat_data[
+                        feat_data[group_col].astype(str) == str(pos)
+                    ]
+
+                if feat_data.empty or len(feat_data) < 10:
+                    continue
+
+                # Prepare categorical variables
+                for col in ["sex", "device", "eye", "group"]:
+                    if col in feat_data.columns:
+                        feat_data[col] = feat_data[col].astype("category")
+
+                # Build formula (replace placeholder if needed)
+                formula = formula_template
+
+                # Run model(s)
+                if stratify_by_group and not glaucoma_only:
+                    # Run separate models for each group
+                    for grp in [ctrl, pos]:
+                        grp_data = feat_data[
+                            feat_data[group_col].astype(str) == str(grp)
+                        ]
+                        if len(grp_data) < 10:
+                            continue
+
+                        # Remove group term from formula for stratified analysis
+                        strat_formula = re.sub(
+                            r"\s*\+?\s*group\s*", " ", formula
+                        )
+                        strat_formula = re.sub(
+                            r"\s*\+?\s*predictor:group\s*", " ", strat_formula
+                        )
+                        strat_formula = re.sub(r"\s+", " ", strat_formula).strip()
+
+                        model_result = run_outcome_lmm(
+                            grp_data,
+                            strat_formula,
+                            random_effects[0],
+                            outcome_var,
+                        )
+
+                        if model_result and "predictor" in model_result["params"]:
+                            pred_params = model_result["params"]["predictor"]
+                            results.append({
+                                "model_name": model_name,
+                                "description": description,
+                                "outcome": outcome_var,
+                                "predictor_modality": predictor_modality,
+                                "predictor_feature": pred_feature,
+                                "group": grp,
+                                "n_obs": model_result["n_obs"],
+                                "n_subjects": model_result["n_groups"],
+                                "predictor_coef": pred_params["coef"],
+                                "predictor_se": pred_params.get("se", np.nan),
+                                "predictor_ci_low": pred_params.get("ci_low", np.nan),
+                                "predictor_ci_high": pred_params.get("ci_high", np.nan),
+                                "predictor_pvalue": pred_params.get("pvalue", np.nan),
+                                "aic": model_result["aic"],
+                                "bic": model_result["bic"],
+                            })
+
+                    # Also run combined model with interaction
+                    model_result = run_outcome_lmm(
+                        feat_data,
+                        formula,
+                        random_effects[0],
+                        outcome_var,
+                    )
+
+                    if model_result:
+                        # Extract predictor main effect
+                        pred_params = model_result["params"].get("predictor", {})
+                        # Extract interaction if present
+                        interaction_key = f"predictor:{group_col}[T.{pos}]"
+                        interaction_params = model_result["params"].get(
+                            interaction_key, {}
+                        )
+
+                        results.append({
+                            "model_name": model_name,
+                            "description": description,
+                            "outcome": outcome_var,
+                            "predictor_modality": predictor_modality,
+                            "predictor_feature": pred_feature,
+                            "group": "Combined (with interaction)",
+                            "n_obs": model_result["n_obs"],
+                            "n_subjects": model_result["n_groups"],
+                            "predictor_coef": pred_params.get("coef", np.nan),
+                            "predictor_se": pred_params.get("se", np.nan),
+                            "predictor_ci_low": pred_params.get("ci_low", np.nan),
+                            "predictor_ci_high": pred_params.get("ci_high", np.nan),
+                            "predictor_pvalue": pred_params.get("pvalue", np.nan),
+                            "interaction_coef": interaction_params.get("coef", np.nan),
+                            "interaction_pvalue": interaction_params.get("pvalue", np.nan),
+                            "aic": model_result["aic"],
+                            "bic": model_result["bic"],
+                        })
+                else:
+                    # Single model (either all data or glaucoma only)
+                    model_result = run_outcome_lmm(
+                        feat_data,
+                        formula,
+                        random_effects[0],
+                        outcome_var,
+                    )
+
+                    if model_result and "predictor" in model_result["params"]:
+                        pred_params = model_result["params"]["predictor"]
+                        group_label = "Glaucoma only" if glaucoma_only else "All"
+
+                        results.append({
+                            "model_name": model_name,
+                            "description": description,
+                            "outcome": outcome_var,
+                            "predictor_modality": predictor_modality,
+                            "predictor_feature": pred_feature,
+                            "group": group_label,
+                            "n_obs": model_result["n_obs"],
+                            "n_subjects": model_result["n_groups"],
+                            "predictor_coef": pred_params["coef"],
+                            "predictor_se": pred_params.get("se", np.nan),
+                            "predictor_ci_low": pred_params.get("ci_low", np.nan),
+                            "predictor_ci_high": pred_params.get("ci_high", np.nan),
+                            "predictor_pvalue": pred_params.get("pvalue", np.nan),
+                            "aic": model_result["aic"],
+                            "bic": model_result["bic"],
+                        })
+
+        res_df = pd.DataFrame(results)
+
+        if not res_df.empty:
+            # Format and save
+            res_df["Coef (95% CI)"] = res_df.apply(
+                lambda r: f"{r['predictor_coef']:.4f} [{r['predictor_ci_low']:.4f}, {r['predictor_ci_high']:.4f}]"
+                if pd.notna(r["predictor_coef"])
+                else "",
+                axis=1,
+            )
+            res_df["P-value"] = res_df["predictor_pvalue"].map(format_p)
+
+            res_df.to_csv(
+                self.out_dir / "tables" / "OutcomeModels_All.csv", index=False
+            )
+            logger.info(f"Saved OutcomeModels_All.csv with {len(res_df)} model results")
+
+            # Save summary table (one row per model-feature combination)
+            summary_cols = [
+                "model_name",
+                "description",
+                "outcome",
+                "predictor_feature",
+                "group",
+                "n_obs",
+                "Coef (95% CI)",
+                "P-value",
+            ]
+            summary_cols = [c for c in summary_cols if c in res_df.columns]
+            summary_df = res_df[summary_cols]
+            summary_df.to_csv(
+                self.out_dir / "tables" / "OutcomeModels_Summary.csv", index=False
+            )
+            logger.info("Saved OutcomeModels_Summary.csv")
+
+        return res_df
+
     def export_master_tables(self, res: pd.DataFrame) -> None:
         """
         Export master tables with formatted statistics.
@@ -873,6 +1192,11 @@ class MultiModalPipeline:
 
         # Export master tables
         self.export_master_tables(res)
+
+        # Run outcome-based LMM models (VA ~ VD, CS ~ RNFL, etc.)
+        outcome_res = self.run_outcome_models(merged, clin)
+        if not outcome_res.empty:
+            outputs["outcome_models"] = outcome_res
 
         logger.info("=" * 60)
         logger.info("Pipeline completed successfully!")
