@@ -1,0 +1,10 @@
+# Generated outputs - do not commit
+outputs/
+*.parquet
+*.pyc
+__pycache__/
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.env
