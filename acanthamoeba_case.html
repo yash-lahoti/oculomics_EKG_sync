@@ -1,0 +1,1129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Acanthamoeba Keratitis — Interactive Case</title>
+<style>
+/* ── Variables ─────────────────────────────────────────────── */
+:root {
+  --c-primary:    #4f46e5;
+  --c-primary-d:  #4338ca;
+  --c-secondary:  #7c3aed;
+  --c-success:    #16a34a;
+  --c-danger:     #dc2626;
+  --c-warning:    #d97706;
+  --c-amber:      #f59e0b;
+  --c-text:       #1e293b;
+  --c-muted:      #64748b;
+  --c-border:     #e2e8f0;
+  --c-bg:         #f8fafc;
+  --c-surface:    #ffffff;
+  --c-indigo-50:  #eef2ff;
+  --c-indigo-100: #e0e7ff;
+  --c-slate-100:  #f1f5f9;
+  --c-slate-700:  #334155;
+  --c-slate-800:  #1e293b;
+  --radius:       .875rem;
+  --shadow:       0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.05);
+}
+
+/* ── Reset ─────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; font-size: 15px;
+       line-height: 1.6; color: var(--c-text); background: var(--c-bg); }
+button { font-family: inherit; cursor: pointer; border: none; }
+table  { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; }
+strong { font-weight: 600; }
+em     { font-style: italic; }
+
+/* ── Layout ────────────────────────────────────────────────── */
+.wrap  { max-width: 860px; margin: 0 auto; padding: 0 1rem 3rem; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.grid3 { display: grid; grid-template-columns: repeat(3,1fr); gap: .75rem; }
+.space { display: flex; flex-direction: column; gap: 1rem; }
+.row   { display: flex; align-items: center; gap: .75rem; }
+@media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr;}}
+
+/* ── Topbar ────────────────────────────────────────────────── */
+#topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: var(--c-surface); border-bottom: 1px solid var(--c-border);
+  box-shadow: var(--shadow);
+}
+#topbar-inner { max-width: 860px; margin: 0 auto; padding: .75rem 1rem; display: flex; gap: 1rem; align-items: center; }
+.progress-wrap { flex: 1; }
+.progress-label { display: flex; justify-content: space-between; font-size: .75rem; color: var(--c-muted); margin-bottom: .25rem; }
+.progress-label span:first-child { color: var(--c-primary); font-weight: 600; }
+.progress-track { height: 8px; background: var(--c-slate-100); border-radius: 4px; overflow: hidden; }
+.progress-fill  { height: 100%; background: var(--c-primary); border-radius: 4px; width: 0; transition: width .5s ease; }
+.topbar-meta { text-align: right; font-size: .8rem; }
+.topbar-meta small { color: var(--c-muted); }
+.topbar-meta b { display: block; color: var(--c-slate-700); }
+@media(max-width:500px){.topbar-meta{display:none;}}
+
+/* ── Cards ─────────────────────────────────────────────────── */
+.card { background: var(--c-surface); border: 1px solid var(--c-border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; }
+.card-hero { background: linear-gradient(135deg, var(--c-primary), var(--c-secondary)); padding: 1.25rem 1.5rem; }
+.card-hero h1 { font-size: 1.4rem; font-weight: 700; color: #fff; margin-top: .4rem; }
+.card-hero p  { font-size: .8rem; color: rgba(255,255,255,.8); margin-top: .2rem; }
+.card-dark  { background: var(--c-slate-700); color: #fff; padding: .85rem 1.25rem; display: flex; align-items: center; gap: .6rem; }
+.card-dark h2 { font-size: 1rem; font-weight: 600; }
+.card-body  { padding: 1.25rem 1.5rem; }
+.step-badge { background: var(--c-primary); color: #fff; font-size: .7rem; font-weight: 700; border-radius: 50%; width: 1.5rem; height: 1.5rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ── Tag chips ─────────────────────────────────────────────── */
+.tags { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .75rem; }
+.tag  { font-size: .72rem; background: rgba(255,255,255,.2); color: #fff; border-radius: 999px; padding: .2rem .7rem; font-weight: 500; }
+
+/* ── Meta blocks ───────────────────────────────────────────── */
+.meta-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: .75rem; margin-bottom: 1rem; }
+@media(max-width:600px){.meta-grid{grid-template-columns:1fr 1fr;}}
+.meta-block { background: var(--c-slate-100); border-radius: .6rem; padding: .75rem; }
+.meta-block small { font-size: .7rem; color: var(--c-muted); text-transform: uppercase; letter-spacing: .05em; }
+.meta-block b { display: block; font-size: 1.05rem; margin: .2rem 0 .1rem; }
+.meta-block span { font-size: .82rem; color: var(--c-muted); }
+.meta-block.amber b { color: var(--c-warning); }
+.cc-box { background: #fffbeb; border: 1px solid #fde68a; border-radius: .6rem; padding: .85rem 1rem; margin-bottom: .25rem; }
+.cc-box b { color: #92400e; display: block; margin-bottom: .25rem; font-size: .82rem; }
+.cc-box p { color: #78350f; }
+
+/* ── Stat cards ────────────────────────────────────────────── */
+.stat-row { display: grid; grid-template-columns: repeat(3,1fr); gap: .6rem; margin: 1rem 0; }
+@media(max-width:500px){.stat-row{grid-template-columns:1fr;}}
+.stat-card { border-radius: .6rem; padding: .85rem; text-align: center; }
+.stat-card.indigo { background:#eef2ff; border:1px solid #c7d2fe; }
+.stat-card.violet { background:#f5f3ff; border:1px solid #ddd6fe; }
+.stat-card.rose   { background:#fff1f2; border:1px solid #fecdd3; }
+.stat-num { font-size: 1.5rem; font-weight: 700; }
+.stat-num.indigo { color: var(--c-primary); }
+.stat-num.violet { color: var(--c-secondary); }
+.stat-num.rose   { color: var(--c-danger); }
+.stat-label { font-size: .72rem; margin-top: .2rem; }
+.stat-card.indigo .stat-label { color: #3730a3; }
+.stat-card.violet .stat-label { color: #5b21b6; }
+.stat-card.rose   .stat-label { color: #9f1239; }
+
+/* ── Begin / locked screen ─────────────────────────────────── */
+#lock-screen { text-align: center; padding: 2rem 1.5rem; }
+#lock-screen .lock-icon { font-size: 2.5rem; margin-bottom: .75rem; }
+#lock-screen p { color: var(--c-muted); margin-bottom: 1rem; }
+
+/* ── Buttons ───────────────────────────────────────────────── */
+.btn { display: inline-flex; align-items: center; gap: .4rem; font-weight: 600; border-radius: .6rem; padding: .6rem 1.2rem; font-size: .88rem; transition: background .15s, opacity .15s; }
+.btn-primary  { background: var(--c-primary); color: #fff; }
+.btn-primary:hover  { background: var(--c-primary-d); }
+.btn-dark     { background: var(--c-slate-700); color: #fff; }
+.btn-dark:hover     { background: var(--c-slate-800); }
+.btn-lg { padding: .75rem 1.5rem; font-size: 1rem; }
+
+/* ── Sections (progressive reveal) ────────────────────────── */
+.section-reveal { animation: slideIn .4s ease-out; }
+@keyframes slideIn { from { opacity:0; transform:translateY(14px); } to { opacity:1; transform:translateY(0); } }
+[data-min-step] { display: none; }
+
+/* ── MCQ ───────────────────────────────────────────────────── */
+.mcq-box { border: 2px solid var(--c-indigo-100); border-radius: var(--radius); padding: 1.1rem 1.25rem; background: var(--c-indigo-50); margin-top: 1rem; }
+.mcq-label { font-size: .72rem; font-weight: 700; color: var(--c-primary); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .5rem; }
+.mcq-q { font-weight: 600; margin-bottom: 1rem; }
+.mcq-opts { display: flex; flex-direction: column; gap: .5rem; }
+.mcq-opt { display: flex; align-items: flex-start; gap: .75rem; width: 100%; background: #fff; border: 2px solid var(--c-border); border-radius: .6rem; padding: .75rem 1rem; font-size: .88rem; text-align: left; transition: border-color .15s, background .15s; }
+.mcq-opt:hover:not(:disabled) { border-color: var(--c-primary); background: var(--c-indigo-50); }
+.mcq-opt:disabled { cursor: default; }
+.mcq-letter { font-weight: 700; color: var(--c-muted); flex-shrink: 0; min-width: 1.2rem; margin-top: .05rem; }
+.mcq-opt.correct { border-color: var(--c-success) !important; background: #f0fdf4 !important; }
+.mcq-opt.wrong   { border-color: var(--c-danger)  !important; background: #fef2f2 !important; }
+.mcq-opt.partial { border-color: var(--c-warning)  !important; background: #fffbeb !important; }
+.mcq-opt.dim     { opacity: .45; }
+.mcq-feedback { display: none; margin-top: 1rem; border-radius: .6rem; padding: .85rem 1rem; font-size: .88rem; }
+.mcq-feedback.correct { background:#f0fdf4; border:1px solid #bbf7d0; color:#14532d; }
+.mcq-feedback.wrong   { background:#fef2f2; border:1px solid #fecaca; color:#7f1d1d; }
+.mcq-feedback.partial { background:#fffbeb; border:1px solid #fde68a; color:#78350f; }
+.mcq-ref { font-size: .75rem; color: var(--c-muted); font-style: italic; margin-top: .5rem; }
+
+/* ── Accordions ────────────────────────────────────────────── */
+.acc-wrap { display: flex; flex-direction: column; gap: .5rem; }
+.acc-item { border: 1px solid var(--c-border); border-radius: .7rem; overflow: hidden; }
+.acc-trigger { width: 100%; display: flex; justify-content: space-between; align-items: center; padding: .75rem 1rem; background: var(--c-slate-100); font-size: .88rem; font-weight: 500; color: var(--c-text); text-align: left; transition: background .15s; }
+.acc-trigger:hover { background: #e2e8f0; }
+.acc-trigger .dot { width: .65rem; height: .65rem; border-radius: 50%; flex-shrink: 0; }
+.acc-trigger .dot.amber  { background: #f59e0b; }
+.acc-trigger .dot.blue   { background: #3b82f6; }
+.acc-trigger .dot.red    { background: var(--c-danger); }
+.acc-trigger .dot.orange { background: #f97316; }
+.acc-chevron { font-size: .7rem; color: var(--c-muted); flex-shrink: 0; }
+.acc-body { display: none; padding: .85rem 1rem; font-size: .86rem; color: var(--c-text); }
+.acc-body.open { display: block; }
+.acc-item.result { border-color: #bbf7d0; }
+.acc-item.result .acc-trigger { background: #f0fdf4; color: #14532d; }
+.acc-result-badge { font-size: .7rem; background: var(--c-success); color: #fff; border-radius: 999px; padding: .1rem .5rem; }
+.acc-result-pending { font-size: .7rem; background: var(--c-muted); color: #fff; border-radius: 999px; padding: .1rem .5rem; }
+
+/* ── Tables ─────────────────────────────────────────────────── */
+.tbl-wrap { overflow-x: auto; margin: .75rem 0; }
+.tbl { width: 100%; font-size: .8rem; border: 1px solid var(--c-border); border-radius: .6rem; overflow: hidden; }
+.tbl th { background: var(--c-slate-100); padding: .6rem .75rem; font-weight: 600; font-size: .78rem; }
+.tbl td { padding: .6rem .75rem; vertical-align: top; border-top: 1px solid var(--c-slate-100); }
+.tbl tr.highlight-green { background: #f0fdf4; }
+.tbl tr.highlight-amber { background: #fffbeb; }
+.tbl tr.highlight-red   { background: #fef2f2; }
+.tbl .td-green { color: #14532d; font-weight: 600; }
+.tbl .td-amber { color: #78350f; font-weight: 600; }
+.tbl .td-red   { color: #7f1d1d; font-weight: 600; }
+.tbl .td-muted { color: var(--c-muted); font-size: .78rem; }
+
+/* ── Callouts ───────────────────────────────────────────────── */
+.pearl { border-left: 4px solid var(--c-primary); background: var(--c-indigo-50); border-radius: 0 .5rem .5rem 0; padding: .75rem 1rem; font-size: .86rem; color: #312e81; }
+.pearl b, .pearl strong { font-weight: 600; }
+.warn  { border-left: 4px solid var(--c-danger); background: #fef2f2; border-radius: 0 .5rem .5rem 0; padding: .75rem 1rem; font-size: .86rem; color: #7f1d1d; }
+.warn  b, .warn strong { font-weight: 600; }
+.callout-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+@media(max-width:600px){.callout-grid{grid-template-columns:1fr;}}
+
+/* ── RF Cards ───────────────────────────────────────────────── */
+.rf-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: .5rem; margin: .5rem 0; }
+@media(max-width:500px){.rf-grid{grid-template-columns:1fr;}}
+
+/* ── Diagnosis reveal ───────────────────────────────────────── */
+.dx-hero { background: linear-gradient(135deg, var(--c-primary), var(--c-secondary)); border-radius: var(--radius); padding: 1.25rem 1.5rem; color: #fff; display: flex; gap: 1rem; align-items: center; }
+.dx-hero .icon { font-size: 2rem; flex-shrink: 0; }
+.dx-hero small { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: rgba(255,255,255,.75); }
+.dx-hero h2 { font-size: 1.2rem; font-weight: 700; margin-top: .15rem; }
+
+/* ── Timeline ───────────────────────────────────────────────── */
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before { content:''; position:absolute; left:.6rem; top:0; bottom:0; width:2px; background:var(--c-border); }
+.tl-item { position: relative; margin-bottom: 1rem; }
+.tl-dot  { position: absolute; left: -1.85rem; top: .3rem; width: .75rem; height: .75rem; border-radius: 50%; }
+.tl-dot.blue   { background:#3b82f6; }
+.tl-dot.amber  { background:#f59e0b; }
+.tl-dot.red    { background:var(--c-danger); }
+.tl-dot.indigo { background:var(--c-primary); }
+.tl-when { font-size: .72rem; color: var(--c-muted); }
+.tl-text { font-size: .88rem; }
+.tl-text.highlight { font-weight: 600; color: var(--c-primary); }
+
+/* ── Case complete banner ───────────────────────────────────── */
+.complete-banner { background: linear-gradient(135deg, #16a34a, #059669); border-radius: var(--radius); padding: 1.5rem; text-align: center; color: #fff; }
+.complete-banner .icon { font-size: 2.5rem; margin-bottom: .5rem; }
+.complete-banner h3 { font-size: 1.2rem; font-weight: 700; }
+.complete-banner p  { color: rgba(255,255,255,.85); font-size: .88rem; margin-top: .4rem; }
+.complete-chips { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin-top: .85rem; }
+.complete-chip { background: rgba(255,255,255,.2); border-radius: 999px; padding: .2rem .75rem; font-size: .82rem; }
+
+/* ── Misc ───────────────────────────────────────────────────── */
+.section-title { font-size: .72rem; font-weight: 700; color: var(--c-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .5rem; }
+.va-table { font-size: .85rem; border: 1px solid var(--c-border); border-radius: .6rem; overflow: hidden; }
+.va-table th { background: var(--c-slate-100); padding: .5rem .75rem; }
+.va-table td { padding: .5rem .75rem; border-top: 1px solid var(--c-slate-100); }
+.eye-r { color: #9f1239; font-weight: 600; }
+.mono  { font-family: monospace; font-size: .8rem; white-space: pre; background: #f8fafc; border: 1px solid var(--c-border); border-radius: .4rem; padding: .75rem; line-height: 1.7; overflow-x: auto; }
+.refs-list p { font-size: .8rem; color: var(--c-muted); margin-bottom: .35rem; }
+.footer { text-align: center; font-size: .75rem; color: #94a3b8; padding: 1rem 1rem 0; }
+ul.list { padding-left: 1.2rem; }
+ul.list li { margin-bottom: .2rem; font-size: .88rem; }
+.sub-title { font-weight: 600; font-size: .9rem; margin-bottom: .5rem; }
+.text-sm { font-size: .88rem; }
+.text-xs { font-size: .78rem; }
+.text-muted { color: var(--c-muted); }
+.mt { margin-top: .75rem; }
+.mt2 { margin-top: 1.25rem; }
+.badge { display: inline-block; border-radius: 999px; padding: .15rem .55rem; font-size: .7rem; font-weight: 600; }
+.badge-ev-high { background:#dcfce7; color:#14532d; }
+.badge-ev-mod  { background:#fef9c3; color:#713f12; }
+</style>
+</head>
+<body>
+
+<!-- ── TOP BAR ──────────────────────────────────────────────── -->
+<div id="topbar">
+  <div id="topbar-inner">
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span>Case Progress</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+    </div>
+    <div class="topbar-meta">
+      <small>Subspecialty</small>
+      <b>Cornea / Infectious</b>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+<div class="space" style="padding-top:1.5rem">
+
+<!-- ── HEADER CARD ──────────────────────────────────────────── -->
+<div class="card">
+  <div class="card-hero">
+    <div class="tags">
+      <span class="tag">#Cornea</span>
+      <span class="tag">#InfectiousKeratitis</span>
+      <span class="tag">#Emergent</span>
+      <span class="tag">#ContactLens</span>
+    </div>
+    <h1>Ophtho On Call: Case 12</h1>
+    <p>Anterior Segment · Infectious Keratitis · Progressive Case-Based Learning</p>
+  </div>
+  <div class="card-body">
+    <div class="meta-grid">
+      <div class="meta-block">
+        <small>Patient</small>
+        <b>Jordan Lim</b>
+        <span>27-year-old male</span>
+      </div>
+      <div class="meta-block">
+        <small>Setting</small>
+        <b>Ophthalmology Clinic</b>
+        <span>Referred from Urgent Care</span>
+      </div>
+      <div class="meta-block amber">
+        <small>Difficulty</small>
+        <b>Intermediate</b>
+        <span>4 decision points</span>
+      </div>
+    </div>
+    <div class="cc-box">
+      <b>Chief Complaint</b>
+      <p>"My right eye has been killing me for three weeks. I was told it was a virus but the drops aren't helping."</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── LOCK / BEGIN ──────────────────────────────────────────── -->
+<div class="card" id="lock-screen">
+  <div class="card-body" style="text-align:center;padding:2rem 1.5rem">
+    <div style="font-size:2.5rem;margin-bottom:.75rem">🔐</div>
+    <p style="color:var(--c-muted);margin-bottom:1rem">Work through the case step by step. Each section unlocks after you engage with the previous one.</p>
+    <button class="btn btn-primary btn-lg" onclick="beginCase()">Begin Case &rarr;</button>
+  </div>
+</div>
+
+<!-- ── SECTION 1: HPI ────────────────────────────────────────── -->
+<div class="card section-reveal" data-min-step="1" id="sec-hpi">
+  <div class="card-dark">
+    <span class="step-badge">1</span>
+    <h2>History of Present Illness</h2>
+  </div>
+  <div class="card-body space">
+
+    <p>Jordan presents with a <strong>3-week history of worsening right eye pain</strong>, photophobia, excessive tearing, and gradually blurring vision. He rates his pain <strong>8/10</strong> — "like a hot poker in my eye" — out of proportion to what his original provider described as a "mild-looking cornea."</p>
+
+    <p>Three weeks ago he was seen at an urgent care clinic, diagnosed with <strong>presumed HSV keratitis</strong>, and started on topical acyclovir 3% ointment 5&times; daily and oral valacyclovir 1 g BID. He has seen no improvement and in fact feels his eye is getting worse.</p>
+
+    <p>He first noticed symptoms about 4 days <em>after</em> a weekend surfing trip in Northern California. He wore his soft contact lenses while surfing and did not remove them for approximately 18 hours that day.</p>
+
+    <div class="stat-row">
+      <div class="stat-card indigo">
+        <div class="stat-num indigo">~85%</div>
+        <div class="stat-label">of AK cases linked to contact lens wear</div>
+      </div>
+      <div class="stat-card violet">
+        <div class="stat-num violet">20–50×</div>
+        <div class="stat-label">higher incidence in CL wearers vs general population</div>
+      </div>
+      <div class="stat-card rose">
+        <div class="stat-num rose">~75%</div>
+        <div class="stat-label">of cases initially misdiagnosed (most often as HSV)</div>
+      </div>
+    </div>
+
+    <!-- MCQ 1 -->
+    <div class="mcq-box">
+      <div class="mcq-label">Clinical Decision Point 1 of 4</div>
+      <p class="mcq-q">Based on the HPI alone, what is your <em>leading</em> differential diagnosis?</p>
+      <div class="mcq-opts" id="mcq0-opts">
+        <button class="mcq-opt" onclick="answerMcq(0,0)"><span class="mcq-letter">A.</span><span>Herpes Simplex Keratitis (HSV-1)</span></button>
+        <button class="mcq-opt" onclick="answerMcq(0,1)"><span class="mcq-letter">B.</span><span>Fungal Keratitis (Fusarium / Aspergillus)</span></button>
+        <button class="mcq-opt" onclick="answerMcq(0,2)"><span class="mcq-letter">C.</span><span>Acanthamoeba Keratitis</span></button>
+        <button class="mcq-opt" onclick="answerMcq(0,3)"><span class="mcq-letter">D.</span><span>Bacterial Keratitis (Pseudomonas aeruginosa)</span></button>
+      </div>
+      <div id="mcq0-fb-2" class="mcq-feedback correct">
+        <strong>Correct.</strong> The combination of contact lens wear, ocean water exposure (wearing lenses while surfing), pain disproportionate to exam findings, young male demographic, and failure of antiviral therapy makes Acanthamoeba Keratitis the leading diagnosis. AK classically presents with severe pain from perineural inflammation, which may precede visible keratitis signs.
+        <div class="mcq-ref">Reference: Maycock NJ, Jayaswal R. Update on Acanthamoeba Keratitis. <em>Cornea.</em> 2016;35(5):713–720.</div>
+      </div>
+      <div id="mcq0-fb-0" class="mcq-feedback partial">
+        <strong>Partially correct — reconsider.</strong> HSV keratitis is the most common <em>misdiagnosis</em> in AK (up to 75% of cases). While HSV should remain on the differential, failure to respond to 3 weeks of antiviral therapy strongly argues against it. The water exposure + CL combination is the pivotal clue.
+      </div>
+      <div id="mcq0-fb-1" class="mcq-feedback wrong">
+        <strong>Incorrect.</strong> Fungal keratitis typically follows vegetative trauma (plant matter, soil) or is seen with certain CL solution types. It is less associated with water sports and does not produce the severe perineural pain pattern characteristic of AK.
+      </div>
+      <div id="mcq0-fb-3" class="mcq-feedback wrong">
+        <strong>Incorrect.</strong> Bacterial keratitis (Pseudomonas is associated with CL wear) typically progresses much faster (days) and produces purulent infiltrate. The extended, painful course with failure of standard therapy would be atypical.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── SECTION 2: ADDITIONAL HISTORY ─────────────────────────── -->
+<div class="card section-reveal" data-min-step="2" id="sec-hx">
+  <div class="card-dark">
+    <span class="step-badge">2</span>
+    <h2>Additional History</h2>
+  </div>
+  <div class="card-body space">
+
+    <div class="grid2">
+      <div>
+        <div class="section-title">Social History</div>
+        <ul class="list">
+          <li>Wears <strong>monthly soft contact lenses</strong> (extended wear, Air Optix)</li>
+          <li>Admits to occasionally <strong>sleeping in lenses</strong></li>
+          <li>Rinsed his lens case with <strong>tap water</strong> before trips</li>
+          <li>Surfs 2–3× per month at local beaches</li>
+          <li>Non-smoker, occasional alcohol, no illicit drugs</li>
+        </ul>
+      </div>
+      <div>
+        <div class="section-title">PMH / Ocular History / Medications</div>
+        <ul class="list">
+          <li>No prior eye conditions or surgery</li>
+          <li>No systemic immunosuppression, HIV, or diabetes</li>
+          <li>Valacyclovir 1g BID — 3 weeks, no improvement</li>
+          <li>Acyclovir ointment 5× daily — 3 weeks, no improvement</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="sub-title">Risk Factor Deep Dive</div>
+    <div class="acc-wrap">
+
+      <div class="acc-item">
+        <button class="acc-trigger" onclick="toggleAcc('rf1')">
+          <div class="row"><span class="dot amber"></span>Contact Lens Wear — #1 Risk Factor in Developed World</div>
+          <span class="acc-chevron" id="chevron-rf1">▼</span>
+        </button>
+        <div class="acc-body" id="acc-rf1">
+          <p>Soft contact lenses create microabrasions in the corneal epithelium, providing entry points for Acanthamoeba trophozoites. Extended wear dramatically increases risk by reducing tear clearance and increasing hypoxic stress.</p>
+          <p class="mt"><strong>Key risk behaviors:</strong></p>
+          <ul class="list mt">
+            <li>Swimming, showering, or surfing while wearing lenses</li>
+            <li>Rinsing lens case or lenses with tap water (not sterile saline)</li>
+            <li>"Topping off" solution rather than replacing daily</li>
+            <li>Not replacing lens case monthly</li>
+            <li>Sleeping in lenses (even occasionally)</li>
+          </ul>
+          <div class="mt"><span class="badge badge-ev-high">Evidence Level: HIGH</span> — Multiple prospective case-control studies confirm CL wear as the dominant risk factor in developed countries.</div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger" onclick="toggleAcc('rf2')">
+          <div class="row"><span class="dot blue"></span>Water Exposure — Tap Water, Pools, Hot Tubs, Natural Bodies</div>
+          <span class="acc-chevron" id="chevron-rf2">▼</span>
+        </button>
+        <div class="acc-body" id="acc-rf2">
+          <p>Acanthamoeba is ubiquitous — found in tap water, soil, and natural bodies of water. Municipal water treatment does not reliably eliminate cysts (chlorination-resistant). Hot tubs and swimming pools are especially high-risk due to aerosolized water.</p>
+          <p class="mt">In Jordan's case: surfing in ocean water with lenses in is the likely inoculation event. Marine environments contain Acanthamoeba and salt water does not sterilize lenses. Rinsing the lens case with tap water further compounds the risk.</p>
+          <div class="mt"><span class="badge badge-ev-high">Evidence Level: HIGH</span> — Water exposure is the primary transmission route; tap water rinsing is an independent risk factor.</div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger" onclick="toggleAcc('rf3')">
+          <div class="row"><span class="dot red"></span>Steroid Use — Dramatically Worsens Prognosis</div>
+          <span class="acc-chevron" id="chevron-rf3">▼</span>
+        </button>
+        <div class="acc-body" id="acc-rf3">
+          <p>Topical corticosteroids given for misdiagnosed "herpetic" keratitis can catastrophically accelerate AK. Steroids promote cyst-to-trophozoite transition, suppress the host leukocyte response, and are associated with poorer outcomes and higher rates of surgical intervention.</p>
+          <div class="warn mt"><strong>Clinical Pearl:</strong> A patient on steroids with presumed "HSV keratitis" not improving should prompt urgent cornea referral and suspension of steroids if AK is suspected.</div>
+          <div class="mt"><span class="badge badge-ev-high">Evidence Level: HIGH</span> — Steroid use is an independent predictor of worse visual outcomes and need for keratoplasty.</div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger" onclick="toggleAcc('rf4')">
+          <div class="row"><span class="dot orange"></span>Immunosuppression — Less Common but Severe</div>
+          <span class="acc-chevron" id="chevron-rf4">▼</span>
+        </button>
+        <div class="acc-body" id="acc-rf4">
+          <p>HIV, solid organ transplant recipients, and patients on systemic immunosuppressants can develop AK without lens wear. In these populations, AK can be bilateral and follows a more fulminant course. Jordan has <em>no</em> systemic immunosuppression — an important point suggesting a better baseline prognosis.</p>
+          <div class="mt"><span class="badge badge-ev-mod">Evidence Level: MODERATE</span> — Case reports and series; less well-quantified than CL risk.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <button class="btn btn-dark" onclick="advanceTo(3)">Proceed to Examination &rarr;</button>
+
+  </div>
+</div>
+
+<!-- ── SECTION 3: EXAMINATION ─────────────────────────────────── -->
+<div class="card section-reveal" data-min-step="3" id="sec-exam">
+  <div class="card-dark">
+    <span class="step-badge">3</span>
+    <h2>Slit-Lamp Examination &amp; Vitals</h2>
+  </div>
+  <div class="card-body space">
+
+    <div class="grid2">
+      <div>
+        <div class="section-title">Visual Acuity (corrected)</div>
+        <table class="va-table">
+          <thead><tr><th>Eye</th><th>BCVA</th><th>IOP</th></tr></thead>
+          <tbody>
+            <tr><td class="eye-r">OD (right)</td><td>20/100</td><td>14 mmHg</td></tr>
+            <tr><td>OS (left)</td><td>20/20</td><td>13 mmHg</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <div class="section-title">External / Adnexal</div>
+        <ul class="list text-sm">
+          <li>Significant photophobia on penlight exposure</li>
+          <li>Diffuse conjunctival injection OD</li>
+          <li>Mild lid edema OD</li>
+          <li>Excessive lacrimation</li>
+        </ul>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Slit-Lamp Findings — OD</div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Structure</th><th>Finding</th><th>Clinical Significance</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Epithelium</td>
+              <td>Irregular surface; punctate epithelial erosions; pseudodendrites</td>
+              <td class="td-muted">Pseudodendrites — common early AK finding; frequent cause of HSV misdiagnosis</td>
+            </tr>
+            <tr style="background:#fff1f2">
+              <td><strong style="color:#9f1239">Stroma — KEY</strong></td>
+              <td><strong style="color:#9f1239">Perineural infiltrates: white patchy opacities tracking corneal nerves radially from center</strong></td>
+              <td class="td-muted">Pathognomonic for AK when present (~63% of early cases); trophozoite invasion of perineural space</td>
+            </tr>
+            <tr>
+              <td>Anterior stroma</td>
+              <td>Faint diffuse anterior stromal haze; no full ring infiltrate yet</td>
+              <td class="td-muted">Early/intermediate stage — ring not yet formed</td>
+            </tr>
+            <tr>
+              <td>Anterior chamber</td>
+              <td>1+ cell, 1+ flare; no hypopyon</td>
+              <td class="td-muted">Mild anterior uveitis common; hypopyon = advanced disease or secondary bacterial superinfection</td>
+            </tr>
+            <tr>
+              <td>Lens / Posterior</td>
+              <td>Clear; posterior segment normal</td>
+              <td class="td-muted">AK does not penetrate posterior segment in typical cases</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="mono">
+      Schematic: Right Cornea (OD)
+
+        ╭──────────────────╮
+       ╱   ·  ·  · ·  ·   ╲   ← Diffuse PEE (epithelium)
+      │  —●—●—●—CENTER—●—  │   ← Perineural infiltrates (●)
+      │  —●—          —●—  │     tracking radially along
+      │  —●—  faint   —●—  │     corneal nerve plexus
+       ╲   ·  stromal ·   ╱
+        ╰──────────────────╯
+          ● = perineural infiltrates (pathognomonic)</div>
+
+    <div class="pearl"><strong>Teaching Pearl:</strong> Pain out of proportion to slit-lamp findings is the hallmark early AK presentation. Acanthamoeba invades perineural spaces (corneal nerves are among the densest in the body), causing severe neuropathic pain before a visible infiltrate becomes impressive. Think AK when pain &gt;&gt; signs + CL history.</div>
+
+    <!-- MCQ 2 -->
+    <div class="mcq-box">
+      <div class="mcq-label">Clinical Decision Point 2 of 4</div>
+      <p class="mcq-q">What is the most appropriate <em>next</em> diagnostic test to perform in clinic today?</p>
+      <div class="mcq-opts" id="mcq1-opts">
+        <button class="mcq-opt" onclick="answerMcq(1,0)"><span class="mcq-letter">A.</span><span>In vivo confocal microscopy (IVCM) of the cornea</span></button>
+        <button class="mcq-opt" onclick="answerMcq(1,1)"><span class="mcq-letter">B.</span><span>Corneal culture on blood agar and chocolate agar</span></button>
+        <button class="mcq-opt" onclick="answerMcq(1,2)"><span class="mcq-letter">C.</span><span>Anterior segment OCT</span></button>
+        <button class="mcq-opt" onclick="answerMcq(1,3)"><span class="mcq-letter">D.</span><span>Serum Acanthamoeba antibody titer</span></button>
+      </div>
+      <div id="mcq1-fb-0" class="mcq-feedback correct">
+        <strong>Correct.</strong> In vivo confocal microscopy (IVCM) is the diagnostic test of choice for suspected AK when available. It is non-invasive, provides real-time corneal imaging, and can visualize hyperreflective double-walled Acanthamoeba cysts (15–30 µm) in the epithelium or stroma. Sensitivity approaches 90% in experienced hands.
+        <div class="mcq-ref">Reference: Nasit M, Pahuja S. Confocal microscopy in Acanthamoeba keratitis. <em>Indian J Ophthalmol.</em> 2017;65(11):1119–1126.</div>
+      </div>
+      <div id="mcq1-fb-1" class="mcq-feedback wrong">
+        <strong>Incorrect.</strong> Standard blood/chocolate agar cultures are for bacterial pathogens. Acanthamoeba requires specialized culture on <em>non-nutrient agar seeded with E. coli</em>. However, confocal microscopy is preferred as the immediate in-office test given its non-invasive nature and high sensitivity.
+      </div>
+      <div id="mcq1-fb-2" class="mcq-feedback wrong">
+        <strong>Incorrect.</strong> Anterior segment OCT can define the depth and extent of stromal disease, useful for staging and surgical planning, but cannot identify Acanthamoeba cysts or trophozoites and thus does not establish the diagnosis.
+      </div>
+      <div id="mcq1-fb-3" class="mcq-feedback wrong">
+        <strong>Incorrect.</strong> Serum Acanthamoeba antibody titers are not used in clinical diagnosis of AK. Antibodies to Acanthamoeba are found in most healthy adults (environmental exposure is common) and cannot distinguish active keratitis from prior environmental exposure.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── SECTION 4: WORKUP ──────────────────────────────────────── -->
+<div class="card section-reveal" data-min-step="4" id="sec-workup">
+  <div class="card-dark">
+    <span class="step-badge">4</span>
+    <h2>Workup &amp; Results</h2>
+  </div>
+  <div class="card-body space">
+
+    <p class="text-sm text-muted">You order the following diagnostic workup. Results return over the next 24–48 hours.</p>
+
+    <div class="acc-wrap">
+
+      <div class="acc-item result">
+        <button class="acc-trigger" onclick="toggleAcc('dx1')">
+          <div class="row"><span class="acc-result-badge">POSITIVE</span>In Vivo Confocal Microscopy (IVCM) — OD</div>
+          <span class="acc-chevron" id="chevron-dx1">▼</span>
+        </button>
+        <div class="acc-body" id="acc-dx1">
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:.5rem;padding:.75rem;margin-bottom:.75rem">
+            <strong style="color:#14532d">POSITIVE</strong>
+            <p class="mt" style="font-size:.86rem">Multiple <strong>hyperreflective, double-walled spherical cysts</strong> measuring 15–25 µm identified in the corneal epithelium and anterior stroma. Cyst density greatest at the corneal center. Perineural spaces show hyperreflective infiltrates consistent with trophozoite invasion. <strong>Findings are diagnostic of Acanthamoeba keratitis.</strong></p>
+          </div>
+          <div class="grid2">
+            <div style="background:var(--c-slate-100);border-radius:.5rem;padding:.6rem;font-size:.78rem">
+              <div class="sub-title" style="font-size:.78rem">Diagnostic Performance</div>
+              <div>Sensitivity: ~90% (experienced centers)</div>
+              <div>Specificity: ~85–90%</div>
+              <div>Advantage: Non-invasive, immediate result</div>
+              <div>Limitation: Operator-dependent</div>
+            </div>
+            <div style="background:var(--c-slate-100);border-radius:.5rem;padding:.6rem;font-size:.78rem">
+              <div class="sub-title" style="font-size:.78rem">What You See</div>
+              <div>Cysts: 15–30 µm, hyperreflective, double-walled</div>
+              <div>Trophozoites: 15–45 µm, irregular, stellate</div>
+              <div>Perineural infiltrates: bright opacities along nerve fibers</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-item result">
+        <button class="acc-trigger" onclick="toggleAcc('dx2')">
+          <div class="row"><span class="acc-result-badge">POSITIVE</span>Corneal Scrape — PCR for Acanthamoeba</div>
+          <span class="acc-chevron" id="chevron-dx2">▼</span>
+        </button>
+        <div class="acc-body" id="acc-dx2">
+          <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:.5rem;padding:.75rem;margin-bottom:.75rem">
+            <strong style="color:#14532d">POSITIVE</strong>
+            <p class="mt" style="font-size:.86rem">Acanthamoeba DNA detected — <strong>T4 genotype</strong> (most clinically relevant genotype; associated with &gt;90% of AK cases in CL wearers). Result returned at 24 hours.</p>
+          </div>
+          <div class="grid2">
+            <div style="background:var(--c-slate-100);border-radius:.5rem;padding:.6rem;font-size:.78rem">
+              <div class="sub-title" style="font-size:.78rem">Diagnostic Performance</div>
+              <div>Sensitivity: ~95% (highest available)</div>
+              <div>Specificity: ~98%</div>
+              <div>Advantage: Can detect low-load infection; genotyping</div>
+              <div>Limitation: Not universally available</div>
+            </div>
+            <div style="background:var(--c-slate-100);border-radius:.5rem;padding:.6rem;font-size:.78rem">
+              <div class="sub-title" style="font-size:.78rem">Clinical Utility</div>
+              <div>Best confirmatory test when IVCM equivocal</div>
+              <div>Useful in culture-negative cases</div>
+              <div>T4 genotype = most common in CL-associated AK worldwide</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger" onclick="toggleAcc('dx3')">
+          <div class="row"><span class="acc-result-pending">PENDING</span>Culture — Non-Nutrient Agar + E. coli Overlay</div>
+          <span class="acc-chevron" id="chevron-dx3">▼</span>
+        </button>
+        <div class="acc-body" id="acc-dx3">
+          <p>Culture results pending (typically 7–14 days). Scrape plated on non-nutrient agar seeded with E. coli — trophozoites graze on bacteria, creating visible plaques. <em>Standard microbiological media will not grow Acanthamoeba.</em></p>
+          <div class="grid2 mt">
+            <div style="background:var(--c-slate-100);border-radius:.5rem;padding:.6rem;font-size:.78rem">
+              <div class="sub-title" style="font-size:.78rem">Performance</div>
+              <div>Sensitivity: ~50–80% (sampling-dependent)</div>
+              <div>Specificity: ~99% (definitive if positive)</div>
+              <div>Time to result: 7–14 days</div>
+            </div>
+            <div style="background:var(--c-slate-100);border-radius:.5rem;padding:.6rem;font-size:.78rem">
+              <div class="sub-title" style="font-size:.78rem">Importance</div>
+              <div>Gold standard for definitive species confirmation</div>
+              <div>Allows anti-amoebic sensitivity testing</div>
+              <div><strong>Negative culture does NOT rule out AK</strong></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger" onclick="toggleAcc('dx4')">
+          Corneal Scrape — Calcofluor White &amp; Giemsa Staining
+          <span class="acc-chevron" id="chevron-dx4">▼</span>
+        </button>
+        <div class="acc-body" id="acc-dx4">
+          <p>Calcofluor white binds to cellulose in the Acanthamoeba cyst wall, producing bright fluorescence under UV light. Giemsa identifies both cysts and trophozoites. Rapid (hours) but dependent on specimen quality and cyst density.</p>
+          <div style="background:var(--c-slate-100);border-radius:.5rem;padding:.6rem;font-size:.78rem;margin-top:.6rem">
+            <div>Sensitivity: ~50% (lower yield, especially in early disease)</div>
+            <div>Best used as: rapid adjunct when IVCM is unavailable</div>
+            <div>Calcofluor white requires a fluorescence microscope</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div>
+      <div class="section-title">Differential Diagnosis Comparison</div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Diagnosis</th><th>Key Distinguishing Features</th><th>Response to Empiric Rx</th></tr></thead>
+          <tbody>
+            <tr class="highlight-green">
+              <td class="td-green">Acanthamoeba Keratitis ✓</td>
+              <td>Pain &gt;&gt; signs; perineural infiltrates; CL + water exposure; chronic course; antiviral failure</td>
+              <td>No response to antivirals or antibiotics; responds to biguanides + diamidines</td>
+            </tr>
+            <tr>
+              <td><strong>HSV Keratitis</strong></td>
+              <td>True dendritic ulcer (tapered ends, terminal bulbs); reduced corneal sensation; prior HSV Hx; unilateral</td>
+              <td>Responds to topical/oral antivirals within 1–2 weeks</td>
+            </tr>
+            <tr>
+              <td><strong>Fungal Keratitis</strong></td>
+              <td>Feathery infiltrate margins; satellite lesions; immune ring; vegetative or soil trauma; slow progression</td>
+              <td>No response to antibacterials; responds to natamycin/voriconazole</td>
+            </tr>
+            <tr>
+              <td><strong>Bacterial Keratitis</strong></td>
+              <td>Rapid onset (1–3 days); purulent discharge; dense suppurative infiltrate; CL wear also a risk</td>
+              <td>Responds to broad-spectrum topical fluoroquinolones within days</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- MCQ 3 -->
+    <div class="mcq-box">
+      <div class="mcq-label">Clinical Decision Point 3 of 4</div>
+      <p class="mcq-q">Based on IVCM and PCR results, what is the most accurate diagnosis and staging?</p>
+      <div class="mcq-opts" id="mcq2-opts">
+        <button class="mcq-opt" onclick="answerMcq(2,0)"><span class="mcq-letter">A.</span><span>Acanthamoeba Keratitis, Early/Intermediate Stage (perineural infiltrates, no full ring)</span></button>
+        <button class="mcq-opt" onclick="answerMcq(2,1)"><span class="mcq-letter">B.</span><span>Acanthamoeba Keratitis, Late Stage (ring infiltrate present)</span></button>
+        <button class="mcq-opt" onclick="answerMcq(2,2)"><span class="mcq-letter">C.</span><span>HSV Keratitis with secondary Acanthamoeba colonization</span></button>
+        <button class="mcq-opt" onclick="answerMcq(2,3)"><span class="mcq-letter">D.</span><span>Sterile Immune Ring (secondary to prior HSV, Wessely ring)</span></button>
+      </div>
+      <div id="mcq2-fb-0" class="mcq-feedback correct">
+        <strong>Correct.</strong> Jordan has early/intermediate AK with perineural infiltrates but no complete ring infiltrate. While symptomatic for 3 weeks (intermediate timeline), the absence of a ring infiltrate and hypopyon suggests he has not progressed to late-stage disease. Initiating treatment now carries significantly better prognosis than if a ring had fully formed.
+      </div>
+      <div id="mcq2-fb-1" class="mcq-feedback partial">
+        <strong>Close, but not yet.</strong> The ring infiltrate has not formed on today's exam — Jordan has perineural infiltrates with diffuse anterior stromal haze only. Ring infiltrate typically signals intermediate-late disease. This staging distinction matters for prognosis counseling. The correct staging is early/intermediate.
+      </div>
+      <div id="mcq2-fb-2" class="mcq-feedback wrong">
+        <strong>Incorrect.</strong> Secondary Acanthamoeba colonization of HSV-infected corneas is not a recognized clinical entity. PCR identification of Acanthamoeba T4 genotype with classic IVCM findings and failure of antiviral therapy establishes AK as the primary and sole diagnosis.
+      </div>
+      <div id="mcq2-fb-3" class="mcq-feedback wrong">
+        <strong>Incorrect.</strong> Sterile immune rings (Wessely ring) occur as immune complex deposition in viral keratitis. They would not produce Acanthamoeba cysts on confocal microscopy or yield a positive Acanthamoeba PCR.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── DIAGNOSIS REVEAL ───────────────────────────────────────── -->
+<div class="section-reveal" data-min-step="6" id="sec-dx">
+  <div class="dx-hero">
+    <div class="icon">🔬</div>
+    <div>
+      <small>Confirmed Diagnosis</small>
+      <h2>Acanthamoeba Keratitis — Early/Intermediate Stage</h2>
+    </div>
+  </div>
+</div>
+
+<!-- ── SECTION 5: DIAGNOSIS DETAIL ──────────────────────────── -->
+<div class="card section-reveal" data-min-step="6" id="sec-dx-detail">
+  <div class="card-body space">
+
+    <p>Jordan Lim has confirmed Acanthamoeba Keratitis of the right eye, early/intermediate stage. The delay in diagnosis (3 weeks of antiviral therapy) has allowed the infection to progress from pure epithelial disease toward anterior stromal involvement. Treatment must begin immediately.</p>
+
+    <div>
+      <div class="section-title">Clinical Staging of Acanthamoeba Keratitis</div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Stage</th><th>Timing</th><th>Slit-Lamp Features</th><th>Pain Level</th><th>Prognosis</th></tr></thead>
+          <tbody>
+            <tr class="highlight-green">
+              <td class="td-green">Early</td>
+              <td>&lt;4 weeks</td>
+              <td>Epithelial only; pseudodendrites; perineural infiltrates; no stromal haze</td>
+              <td>Severe (out of proportion)</td>
+              <td class="td-green">Best — medical cure likely</td>
+            </tr>
+            <tr class="highlight-amber">
+              <td class="td-amber">Intermediate ← Jordan</td>
+              <td>1–2 months</td>
+              <td>Anterior stromal infiltrate; early/partial ring; pseudodendrites may persist; mild AC reaction</td>
+              <td>Severe</td>
+              <td class="td-amber">Good if treated promptly; scar possible</td>
+            </tr>
+            <tr class="highlight-red">
+              <td class="td-red">Late</td>
+              <td>&gt;2 months</td>
+              <td>Full ring infiltrate; deep stromal ulceration; scleritis; hypopyon; possible perforation</td>
+              <td>Severe ± decreasing (nerve damage)</td>
+              <td class="td-red">Guarded; frequent need for PKP</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div>
+      <div class="section-title">Jordan's Clinical Timeline</div>
+      <div class="timeline">
+        <div class="tl-item"><span class="tl-dot blue"></span><div class="tl-when">Day 0</div><div class="tl-text">Surfing trip — CL worn in ocean water; tap water rinse of lens case that evening</div></div>
+        <div class="tl-item"><span class="tl-dot amber"></span><div class="tl-when">Day 4</div><div class="tl-text">Onset of right eye pain, photophobia, tearing, blurred vision</div></div>
+        <div class="tl-item"><span class="tl-dot red"></span><div class="tl-when">Day 6</div><div class="tl-text">Urgent Care visit — diagnosed "HSV keratitis"; started acyclovir ointment + oral valacyclovir</div></div>
+        <div class="tl-item"><span class="tl-dot red"></span><div class="tl-when">Days 10–21</div><div class="tl-text">Continued antiviral therapy — symptoms worsening; VA declining OD; second UC visit, same diagnosis maintained</div></div>
+        <div class="tl-item"><span class="tl-dot indigo"></span><div class="tl-when">Day 21 (Today)</div><div class="tl-text highlight">Cornea clinic — IVCM + PCR confirms Acanthamoeba Keratitis → Treatment initiated immediately</div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── SECTION 6: MANAGEMENT ─────────────────────────────────── -->
+<div class="card section-reveal" data-min-step="6" id="sec-mgmt">
+  <div class="card-dark">
+    <span class="step-badge">5</span>
+    <h2>Management</h2>
+  </div>
+  <div class="card-body space">
+
+    <div class="warn">
+      <strong>Immediate Actions:</strong>
+      <ul class="list mt">
+        <li><strong>Discontinue</strong> all contact lens wear indefinitely</li>
+        <li><strong>Discontinue</strong> acyclovir and valacyclovir (no benefit; masking diagnosis)</li>
+        <li>Do <strong>NOT</strong> add topical corticosteroids (accelerates disease in early/intermediate stages)</li>
+        <li>Counsel Jordan: this requires a <strong>long treatment course</strong> (12–18 months)</li>
+      </ul>
+    </div>
+
+    <div class="sub-title">Treatment Protocol — Three Phases</div>
+    <div class="acc-wrap">
+
+      <div class="acc-item" style="border-color:var(--c-indigo-100)">
+        <button class="acc-trigger" onclick="toggleAcc('tx1')" style="background:var(--c-indigo-50);color:#312e81">
+          Phase 1 — Induction (Days 1–7)
+          <span class="acc-chevron" id="chevron-tx1">▼</span>
+        </button>
+        <div class="acc-body" id="acc-tx1">
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead><tr><th>Drug</th><th>Concentration</th><th>Frequency</th><th>Class</th></tr></thead>
+              <tbody>
+                <tr><td><strong>PHMB</strong> (Polyhexamethylene Biguanide)</td><td>0.02%</td><td>Q1h (waking hours)</td><td>Biguanide</td></tr>
+                <tr><td><strong>Propamidine isethionate</strong> (Brolene)</td><td>0.1%</td><td>Q1h (waking hours)</td><td>Diamidine</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="mt text-sm">Both drugs administered simultaneously — biguanide disrupts cell membrane permeability; diamidine inhibits DNA synthesis. Combination overcomes relative resistance of cysts vs. trophozoites. Some centers add <strong>neomycin 0.35%</strong> for triple therapy. For severe or unresponsive cases, PHMB can be escalated to 0.06–0.08%.</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger" onclick="toggleAcc('tx2')">
+          Phase 2 — Continuation (Weeks 2–8)
+          <span class="acc-chevron" id="chevron-tx2">▼</span>
+        </button>
+        <div class="acc-body" id="acc-tx2">
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead><tr><th>Timepoint</th><th>PHMB 0.02%</th><th>Propamidine 0.1%</th></tr></thead>
+              <tbody>
+                <tr><td>Week 2</td><td>Q2h</td><td>Q2h</td></tr>
+                <tr><td>Weeks 3–4</td><td>QID</td><td>QID</td></tr>
+                <tr><td>Weeks 5–8</td><td>TID</td><td>TID</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="mt text-sm">Monitor closely at each visit for: recurrence of pain, increase in infiltrate size/density, development of ring infiltrate, and medication toxicity (superficial punctate keratopathy from biguanide toxicity).</p>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger" onclick="toggleAcc('tx3')">
+          Phase 3 — Maintenance / Taper (Months 3–14+)
+          <span class="acc-chevron" id="chevron-tx3">▼</span>
+        </button>
+        <div class="acc-body" id="acc-tx3">
+          <p>Continue PHMB 0.02% BID + propamidine 0.1% BID for a minimum of 12 months. Total duration often extends to 14–18 months in intermediate-stage disease.</p>
+          <div class="pearl mt"><strong>Why so long?</strong> Acanthamoeba cysts are highly resistant to anti-amoebic drugs. Trophozoites die rapidly, but cysts can persist in the stroma for months. Premature discontinuation risks trophozoite re-emergence from dormant cysts — a leading cause of clinical relapse.</div>
+          <p class="text-sm mt">Steroid controversy: Low-dose topical steroids <em>may</em> be introduced in late disease to suppress stromal inflammation after infection is confirmed quiescent (typically &gt;3 months of treatment, with negative repeat IVCM). This requires expert judgment and close IOP monitoring.</p>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MCQ 4 -->
+    <div class="mcq-box">
+      <div class="mcq-label">Clinical Decision Point 4 of 4</div>
+      <p class="mcq-q">Jordan asks: "Why can't you just give me antibiotic drops that work for other eye infections?" Which statement best explains the therapeutic rationale?</p>
+      <div class="mcq-opts" id="mcq3-opts">
+        <button class="mcq-opt" onclick="answerMcq(3,0)"><span class="mcq-letter">A.</span><span>Standard fluoroquinolone antibiotics have no activity against Acanthamoeba because it is a protozoan, not a bacterium; biguanides disrupt the protozoan cell membrane and diamidines inhibit protozoan DNA synthesis</span></button>
+        <button class="mcq-opt" onclick="answerMcq(3,1)"><span class="mcq-letter">B.</span><span>Antibiotics have partial activity but biguanides are more convenient to use</span></button>
+        <button class="mcq-opt" onclick="answerMcq(3,2)"><span class="mcq-letter">C.</span><span>Acanthamoeba is a fungus and requires antifungal agents like voriconazole as the primary treatment</span></button>
+        <button class="mcq-opt" onclick="answerMcq(3,3)"><span class="mcq-letter">D.</span><span>Oral rather than topical therapy is the key — systemic metronidazole is required to penetrate the corneal cysts</span></button>
+      </div>
+      <div id="mcq3-fb-0" class="mcq-feedback correct">
+        <strong>Correct.</strong> Acanthamoeba is a free-living protozoan — bacterial antibiotics are entirely ineffective. PHMB and chlorhexidine (biguanides) are cationic antiseptics that bind and disrupt phospholipid cell membranes of trophozoites and cysts. Diamidines (propamidine, hexamidine) enter the cell and disrupt DNA synthesis. Dual therapy targets both life-cycle forms synergistically and has no equivalent in bacterial antibiotic pharmacology.
+        <div class="mcq-ref">Reference: Dart JK, Saw VP, Kilvington S. Acanthamoeba Keratitis: Diagnosis and Treatment Update 2009. <em>Am J Ophthalmol.</em> 2009;148(4):487–499.</div>
+      </div>
+      <div id="mcq3-fb-1" class="mcq-feedback wrong">
+        <strong>Incorrect.</strong> Standard antibiotics have <em>no</em> activity against Acanthamoeba — not "partial" activity. Acanthamoeba is a protozoan (eukaryote); fluoroquinolones and other antibiotics target bacterial mechanisms (DNA gyrase, cell wall synthesis) that do not exist in eukaryotic protozoa.
+      </div>
+      <div id="mcq3-fb-2" class="mcq-feedback wrong">
+        <strong>Incorrect.</strong> Acanthamoeba is a protozoan (eukaryote), not a fungus. Voriconazole has been investigated as an adjunct in refractory AK but is not primary therapy. Standard antifungals (natamycin, fluconazole) have no meaningful activity against Acanthamoeba.
+      </div>
+      <div id="mcq3-fb-3" class="mcq-feedback wrong">
+        <strong>Incorrect.</strong> Metronidazole targets anaerobic bacteria and certain gut protozoa but has no established efficacy against Acanthamoeba keratitis. The cornea is avascular — systemic therapy does not adequately penetrate it. AK treatment is primarily topical.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ── SECTION 7: COMPLICATIONS & FOLLOW-UP ──────────────────── -->
+<div class="card section-reveal" data-min-step="8" id="sec-fu">
+  <div class="card-dark">
+    <span class="step-badge">6</span>
+    <h2>Complications, Scarring &amp; Follow-Up</h2>
+  </div>
+  <div class="card-body space">
+
+    <p>Jordan responds to treatment over the next 3 months — pain resolves, IVCM shows decreasing cyst density. However, he develops anterior stromal scarring as the infiltrate resolves. At 18 months post-diagnosis, he has a central scar affecting vision (BCVA 20/200 OD). A discussion of surgical options is initiated.</p>
+
+    <div class="acc-wrap">
+
+      <div class="acc-item">
+        <button class="acc-trigger" onclick="toggleAcc('cx1')" style="background:#fff1f2">
+          Corneal Scarring — Most Common Long-Term Sequela
+          <span class="acc-chevron" id="chevron-cx1">▼</span>
+        </button>
+        <div class="acc-body" id="acc-cx1">
+          <p>Anterior stromal scarring is the most common residual complication after AK, resulting from trophozoite-mediated proteolysis and collagen disruption. Central scars cause irregular astigmatism and vision loss. Prognosis correlates with depth and centrality of scarring.</p>
+          <p class="mt"><strong>Management options:</strong></p>
+          <ul class="list mt">
+            <li>Superficial scar + normal posterior stroma: RGP or scleral lens to optimize optics</li>
+            <li>Deep stromal scar / poor BCVA: Penetrating Keratoplasty (PKP) or Deep Anterior Lamellar Keratoplasty (DALK) after quiescence</li>
+            <li>Surgical timing: minimum 3–6 months after confirmed quiescence; ideally 12+ months</li>
+          </ul>
+          <div style="background:#fff1f2;border:1px solid #fecdd3;border-radius:.5rem;padding:.65rem;margin-top:.6rem;font-size:.82rem;color:#9f1239">
+            <strong>Jordan's outcome:</strong> Central stromal scar (2.5 mm), BCVA 20/200. RGP trial unsuccessful due to irregular topography. Referral for PKP at 18 months post-diagnosis.
+          </div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger" onclick="toggleAcc('cx2')">
+          Penetrating Keratoplasty (PKP) — Surgical Management
+          <span class="acc-chevron" id="chevron-cx2">▼</span>
+        </button>
+        <div class="acc-body" id="acc-cx2">
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead><tr><th>Indication</th><th>Procedure</th><th>Timing</th><th>Outcomes</th></tr></thead>
+              <tbody>
+                <tr><td>Central scar, poor VA, failed medical Rx</td><td>Optical PKP</td><td>&gt;12 months post-quiescence (preferred)</td><td>BCVA improvement; 70% graft survival at 4 years (first graft)</td></tr>
+                <tr><td>Impending perforation, drug-resistant disease</td><td>Therapeutic PKP</td><td>Urgent, regardless of activity</td><td>Globe preservation; higher recurrence risk in active disease</td></tr>
+                <tr><td>Early refractory disease (emerging approach)</td><td>Low-Load Keratoplasty (LLKP)</td><td>Mean 68 days post-initiation</td><td>87.5% second graft survival at 4 years; 4% recurrence rate</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="pearl mt"><strong>AK recurrence after PKP:</strong> ~4% rate in modern series. Continue anti-amoebic prophylaxis post-PKP (typically 3 months). Confocal surveillance of the graft for cyst recurrence is recommended.</div>
+        </div>
+      </div>
+
+      <div class="acc-item">
+        <button class="acc-trigger" onclick="toggleAcc('cx3')">
+          Secondary Glaucoma &amp; Other Complications
+          <span class="acc-chevron" id="chevron-cx3">▼</span>
+        </button>
+        <div class="acc-body" id="acc-cx3">
+          <div class="tbl-wrap">
+            <table class="tbl">
+              <thead><tr><th>Complication</th><th>Mechanism</th><th>Management</th></tr></thead>
+              <tbody>
+                <tr><td><strong>Secondary Glaucoma</strong></td><td>Trabeculitis from inflammation; steroid-induced IOP elevation</td><td>IOP monitoring at every visit; topical IOP-lowering agents; avoid steroid overuse</td></tr>
+                <tr><td><strong>Cataract</strong></td><td>Chronic uveitis; prolonged steroid use</td><td>Defer surgery until infection quiescent; combined with PKP if planned</td></tr>
+                <tr><td><strong>Scleritis</strong></td><td>Extension of infection/inflammation to sclera; marker of severe disease</td><td>NSAIDs, cautious steroid use; associated with worse outcomes</td></tr>
+                <tr><td><strong>Corneal perforation</strong></td><td>Progressive stromal lysis in late, uncontrolled disease</td><td>Cyanoacrylate glue, urgent therapeutic PKP</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <div>
+      <div class="section-title">Follow-Up Schedule</div>
+      <div class="tbl-wrap">
+        <table class="tbl">
+          <thead><tr><th>Timepoint</th><th>Frequency</th><th>Key Assessments</th><th>Red Flags</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Week 1 (Induction)</strong></td><td>Every 1–2 days</td><td>Pain response, infiltrate evolution, VA, IOP, medication compliance</td><td>Worsening infiltrate, new ring, hypopyon, scleritis</td></tr>
+            <tr><td><strong>Weeks 2–4</strong></td><td>Weekly</td><td>IVCM cyst density trend, VA, IOP, medication toxicity (SPK)</td><td>Increasing cyst count, breakthrough pain, IOP spike</td></tr>
+            <tr><td><strong>Months 2–6</strong></td><td>Every 2–4 weeks</td><td>Slit-lamp, IVCM, VA, IOP, taper milestones</td><td>Recurrence of perineural infiltrates, new pain after quiescence</td></tr>
+            <tr><td><strong>Months 6–12</strong></td><td>Monthly</td><td>Scar assessment, IVCM, VA, IOP, topography (Pentacam)</td><td>Any sign of activity; IOP elevation from steroid use</td></tr>
+            <tr><td><strong>&gt;12 months</strong></td><td>Q3 months until clear ×6 months</td><td>BCVA, scar stability, surgical candidacy, scleral lens trial</td><td>Unexpected pain or new infiltrate — relapse concern</td></tr>
+            <tr><td><strong>Post-PKP</strong></td><td>Per graft protocol</td><td>Graft clarity/survival, IOP, IVCM for cyst recurrence, rejection surveillance</td><td>Graft edema, pain recurrence, new infiltrate at graft edge</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <button class="btn btn-dark" onclick="advanceTo(9)">View Teaching Points &rarr;</button>
+
+  </div>
+</div>
+
+<!-- ── SECTION 8: TEACHING POINTS ───────────────────────────── -->
+<div class="card section-reveal" data-min-step="9" id="sec-teach">
+  <div class="card-dark">
+    <span>🎓</span>
+    <h2>Teaching Points &amp; Key Takeaways</h2>
+  </div>
+  <div class="card-body space">
+
+    <div class="callout-grid">
+      <div class="pearl"><strong>1. Pain &gt;&gt; Signs = Think AK</strong><br>Disproportionate pain (especially burning, photophobia) before a striking slit-lamp infiltrate is the early AK hallmark. This distinguishes it from bacterial keratitis, where pain is proportional to severity.</div>
+      <div class="pearl"><strong>2. CL + Water = AK Until Proven Otherwise</strong><br>Any CL wearer with keratitis and history of water exposure (pool, ocean, tap water rinsing) should have AK on the immediate differential — do not wait for antiviral failure.</div>
+      <div class="pearl"><strong>3. Perineural Infiltrates Are Pathognomonic</strong><br>White infiltrates tracking the corneal nerve plexus radially are virtually diagnostic of AK when present. They are present in ~63% of early cases and may paradoxically regress as disease advances.</div>
+      <div class="pearl"><strong>4. IVCM First, Scrape to Confirm</strong><br>Confocal microscopy is fast, non-invasive, and sensitive (~90%). Follow with corneal scrape for PCR and culture to establish definitive diagnosis, especially if treatment response is poor.</div>
+      <div class="warn"><strong>5. Never Give Steroids Early in AK</strong><br>Topical corticosteroids promote trophozoite growth, suppress immune response, and dramatically worsen outcomes. Steroid use is an independent predictor of need for keratoplasty.</div>
+      <div class="pearl"><strong>6. Treat for 12–18 Months</strong><br>Cysts are drug-resistant. A prolonged course (minimum 12 months) is required to eliminate the cyst reservoir and prevent relapse. Premature discontinuation is a leading cause of recurrence.</div>
+      <div class="pearl"><strong>7. PKP Outcomes Are Good if Timed Correctly</strong><br>PKP for post-AK scarring after quiescence achieves 70% graft survival at 4 years. Performing PKP in active disease carries higher recurrence risk. LLKP is an emerging option for early refractory cases.</div>
+      <div class="pearl"><strong>8. Prevent With Patient Education</strong><br>Never swim/shower in CL; use sterile saline, not tap water; replace cases monthly; do not "top off" solution; remove daily. These reduce AK risk substantially.</div>
+    </div>
+
+    <!-- References -->
+    <div>
+      <button class="acc-trigger" onclick="toggleAcc('refs')" style="border-radius:.6rem">
+        References (click to expand)
+        <span class="acc-chevron" id="chevron-refs">▼</span>
+      </button>
+      <div class="acc-body" id="acc-refs">
+        <div class="refs-list mt">
+          <p>1. Maycock NJ, Jayaswal R. Update on Acanthamoeba Keratitis. <em>Cornea.</em> 2016;35(5):713–720.</p>
+          <p>2. Cope JR, Collier SA, Schein OD, et al. Acanthamoeba Keratitis among Rigid Gas Permeable Lens Wearers in the United States. <em>Ophthalmology.</em> 2016;123(7):1435–1441.</p>
+          <p>3. Dart JK, Saw VP, Kilvington S. Acanthamoeba Keratitis: Diagnosis and Treatment Update 2009. <em>Am J Ophthalmol.</em> 2009;148(4):487–499.</p>
+          <p>4. Nasit M, Pahuja S. Confocal Microscopy in Acanthamoeba Keratitis. <em>Indian J Ophthalmol.</em> 2017;65(11):1119–1126.</p>
+          <p>5. Franch A, et al. Treatment of AK with High Dose PHMB (0.08%) Monotherapy: A Case Series. <em>Eur J Ophthalmol.</em> 2025; doi:10.1177/11206721241299470.</p>
+          <p>6. Iovieno A, et al. Rethinking Keratoplasty: Early "Low Load Keratoplasty" vs. Late Optical/Therapeutic Keratoplasty. <em>Cornea.</em> 2024; PMC11434615.</p>
+          <p>7. Frontiers in Medicine. The Pathogenesis, Risk Factors, Diagnosis and Treatment of Acanthamoeba Keratitis. <em>Front Med.</em> 2025;12:1559224.</p>
+          <p>8. CDC. Clinical Overview of Acanthamoeba Keratitis. Available: cdc.gov/acanthamoeba/hcp/clinical-overview-acanthamoeba-keratitis/</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="complete-banner">
+      <div class="icon">🏆</div>
+      <h3>Case Complete!</h3>
+      <p>You have completed the Acanthamoeba Keratitis interactive case. Jordan received timely subspecialty care and ultimately regained functional vision after PKP at 18 months.</p>
+      <div class="complete-chips">
+        <span class="complete-chip">4/4 Decision Points</span>
+        <span class="complete-chip">8 Teaching Pearls</span>
+        <span class="complete-chip">8 References</span>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- .space -->
+</div><!-- .wrap -->
+
+<div class="footer">Created for medical education. Patient is fictional. Clinical content references 2024–2025 literature.</div>
+<div style="height:2rem"></div>
+
+<script>
+// ── State ───────────────────────────────────────────────────────────
+const STATE = { step: 0, mcq: [null, null, null, null], acc: {} };
+const CORRECT = [2, 0, 0, 0]; // correct answer index per MCQ
+const NEXT_STEP = [2, 4, 6, 8]; // step to advance to after each MCQ
+
+// ── Render ──────────────────────────────────────────────────────────
+function render() {
+  const pct = Math.round(STATE.step / 9 * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+
+  // Show/hide progressive sections
+  document.querySelectorAll('[data-min-step]').forEach(el => {
+    const min = parseInt(el.dataset.minStep, 10);
+    const wasHidden = el.style.display === 'none' || el.style.display === '';
+    const visible = STATE.step >= min;
+    if (visible && wasHidden) el.classList.add('section-reveal');
+    el.style.display = visible ? 'block' : 'none';
+  });
+
+  // Lock screen visible only at step 0
+  document.getElementById('lock-screen').style.display = STATE.step === 0 ? 'block' : 'none';
+}
+
+// ── Case actions ────────────────────────────────────────────────────
+function beginCase() { advanceTo(1); }
+
+function advanceTo(n) {
+  if (STATE.step < n) { STATE.step = n; render(); }
+}
+
+function answerMcq(idx, chosen) {
+  if (STATE.mcq[idx] !== null) return;
+  STATE.mcq[idx] = chosen;
+
+  const opts = document.querySelectorAll('#mcq' + idx + '-opts .mcq-opt');
+  opts.forEach((btn, i) => {
+    btn.disabled = true;
+    btn.classList.remove('correct', 'wrong', 'partial', 'dim');
+    if (i === CORRECT[idx]) {
+      btn.classList.add('correct');
+    } else if (i === chosen) {
+      // Special partial for MCQ0 option A when B-D was picked
+      btn.classList.add(idx === 0 && i === 0 ? 'partial' : 'wrong');
+    } else {
+      btn.classList.add('dim');
+    }
+  });
+
+  // Show feedback
+  const fb = document.getElementById('mcq' + idx + '-fb-' + chosen);
+  if (fb) fb.style.display = 'block';
+
+  // Also always show correct feedback if wrong answer chosen
+  if (chosen !== CORRECT[idx]) {
+    const cfb = document.getElementById('mcq' + idx + '-fb-' + CORRECT[idx]);
+    if (cfb && idx !== 0) cfb.style.display = 'block';
+  }
+
+  // Advance step after delay
+  setTimeout(() => { advanceTo(NEXT_STEP[idx]); }, 900);
+}
+
+// ── Accordions ──────────────────────────────────────────────────────
+function toggleAcc(id) {
+  STATE.acc[id] = !STATE.acc[id];
+  const body    = document.getElementById('acc-' + id);
+  const chevron = document.getElementById('chevron-' + id);
+  if (body) body.classList.toggle('open', STATE.acc[id]);
+  if (chevron) chevron.textContent = STATE.acc[id] ? '▲' : '▼';
+}
+
+// ── Init ────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', render);
+</script>
+</body>
+</html>
