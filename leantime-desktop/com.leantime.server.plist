@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  LaunchAgent: keeps Leantime running at http://localhost:8080 whenever you're logged in.
+  Install:   cp com.leantime.server.plist ~/Library/LaunchAgents/ && launchctl load ~/Library/LaunchAgents/com.leantime.server.plist
+  Uninstall: launchctl unload ~/Library/LaunchAgents/com.leantime.server.plist
+  Assumes Leantime lives in ~/Leantime and PHP came from `brew install php@8.3`
+  (edit the command below if you changed either). Log: ~/Library/Logs/leantime-server.log
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.leantime.server</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/zsh</string>
+        <string>-lc</string>
+        <string>cd "$HOME/Leantime" &amp;&amp; exec "$(brew --prefix php@8.3)/bin/php" bin/leantime serve --host=127.0.0.1 --port=8080 >> "$HOME/Library/Logs/leantime-server.log" 2>&amp;1</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>ProcessType</key>
+    <string>Background</string>
+</dict>
+</plist>
